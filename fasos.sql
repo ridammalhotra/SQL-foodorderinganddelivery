@@ -1,4 +1,5 @@
---CREATE TABLES AND INSERT DATA
+--CREATE NEW TABLES AND INSERT DATA
+
 CREATE TABLE driver(driver_id integer,reg_date date); 
 
 INSERT INTO driver(driver_id,reg_date) 
@@ -77,6 +78,7 @@ values (1,101,1,'','','01-01-2021  18:05:02'),
 (10,104,1,'2,6','1,4','01-11-2021 18:34:49');
 
 
+--TABLES AND DATASET
 select * from customer_orders;
 select * from driver_order;
 select * from ingredients;
@@ -85,8 +87,10 @@ select * from rolls;
 select * from rolls_recipes;
 
 
--------------------------------------------------
---------------------BUSINESS QUERIES-------------
+-------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------
+
+----------------------Business Questions To Answer---------------------
 
 -----ROll METRICES-----
 
@@ -100,16 +104,22 @@ SELECT * FROM ingredients
 	
 SELECT COUNT(roll_id) FROM customer_orders
 
+
+	
 --2. How many unique customer orders were made?
 SELECT COUNT(DISTINCT customer_id) 
 FROM customer_orders
 
+	
+	
 --3. How many successful orders delivered by each delivery partner?
 SELECT driver_id, COUNT(DISTINCT order_id)
 FROM driver_order
 WHERE pickup_time IS NOT NULL
 GROUP BY driver_id
 
+
+	
 --4. How many each type of roll was delivered?
 SELECT customer_orders.roll_id, COUNT(customer_orders.roll_id)
 FROM customer_orders
@@ -119,6 +129,8 @@ WHERE driver_order.distance IS NOT NULL
 GROUP BY roll_id 
 ORDER BY roll_id 
 
+
+	
 --5. How many Veg and Non Veg rolls were ordered by each customer?
 With cp as
 	(SELECT customer_id, roll_id, 
@@ -150,6 +162,8 @@ FROM cp
 GROUP BY customer_id
 ORDER BY customer_id
 
+
+	
 --6. What was maximum number of rolls delivered in single order?
 SELECT customer_orders.order_id, COUNT(customer_orders.roll_id) as number_rolls
 FROM customer_orders
@@ -160,6 +174,8 @@ GROUP BY customer_orders.order_id
 ORDER BY number_rolls desc
 LIMIT 1
 
+
+	
 --7. For each customer, how many deivered rolls had atleast 1 change and how many had no changes?
 WITH temp_customer_orders AS
 	(SELECT customer_orders.customer_id,
@@ -193,6 +209,8 @@ WHERE distance IS NOT NULL
 GROUP BY customer_id
 ORDER BY customer_id
 
+
+	
 --8. How many rolls were delivered that had both exclusions and extras?
 WITH temp_customer_orders AS
 	(SELECT customer_orders.customer_id,
@@ -221,6 +239,8 @@ END) AS rolls_delivered
 FROM temp_customer_orders
 WHERE distance IS NOT NULL
 
+
+	
 --9. What was the total number of rolls ordered for each hour of the day?
 SELECT 
 	(EXTRACT(HOUR FROM order_date) || ' - ' ||
@@ -230,6 +250,8 @@ FROM customer_orders
 GROUP BY  Hour_day
 ORDER BY Hour_day
 
+
+	
 --10. What was the number of orders for each day of week?
 SELECT 
 	TO_CHAR(order_date, 'Day') as week,
@@ -239,8 +261,11 @@ GROUP BY  week
 ORDER BY week
 
 
+
+	
 -----DRIVER AND CUSTOMER EXPERIENCE-----
 
+	
 --1. What was average time in minutes it took for each driver to arrive at 
 --the fasoos HQ to pickup the order?
 
@@ -252,6 +277,8 @@ ON driver_order.order_id = customer_orders.order_id
 WHERE driver_order.Pickup_time IS NOT NULL
 GROUP BY driver_order.driver_id
 
+
+	
 --2. Is there any relationship between number of rolls and how long order takes to prepare?
 SELECT customer_orders.order_id, COUNT(customer_orders.roll_id) as no_rolls,
 (AVG(EXTRACT(MINUTE FROM (driver_order.Pickup_time)-
@@ -264,6 +291,7 @@ GROUP BY customer_orders.order_id
 ORDER BY no_rolls desc, time
 
 
+	
 --3. What is the average distance travelled for each of customer?
 SELECT customer_orders.customer_id, 
 ROUND(AVG((replace(driver_order.distance, 'km',''))::text::NUMERIC),2)
@@ -274,12 +302,16 @@ WHERE driver_order.Pickup_time IS NOT NULL
 GROUP BY customer_orders.customer_id
 ORDER BY customer_orders.customer_id
 
+
+	
 --4. What was the difference between shortest and longest delivery times of all orders?
 SELECT (MAX(SUBSTRING(duration FROM 1 FOR 2)::text::numeric)-
 (MIN(SUBSTRING(duration FROM 1 FOR 2)::text::numeric)))
 FROM driver_order
 WHERE duration IS NOT NULL
 
+
+	
 --5. What was the average speed for each driver for each delivery?
 SELECT driver_id,order_id,  ROUND(AVG((replace(driver_order.distance, 'km','')::text::numeric)/
 (SUBSTRING(duration FROM 1 FOR 2)::text::numeric)),2) as speed
@@ -288,6 +320,8 @@ WHERE duration IS NOT NULL
 GROUP BY driver_id, order_id
 ORDER BY driver_id, order_id
 
+
+	
 --6. What is the successful percentage delivery for each driver?
 with co as
 (SELECT driver_id, (CASE WHEN distance IS NOT NULL THEN 1
